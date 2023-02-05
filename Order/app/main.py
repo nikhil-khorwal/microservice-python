@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
+from utils.consumer import OrderConsumer
 from api.api import  orders
 
 load_dotenv()
@@ -17,6 +18,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
+
+orders = OrderConsumer()
+orders.read()
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request,exc):
