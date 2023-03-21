@@ -1,30 +1,6 @@
 version: '3.9'
 
 services:
-
-  zookeeper:
-    image: wurstmeister/zookeeper:3.4.6
-    restart: always
-    ports:
-     - "2181:2181"
-     
-  kafka:
-    image: wurstmeister/kafka
-    restart: always
-    ports:
-     - "9092:9092"
-    expose:
-     - "9093"
-    environment:
-      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka:9093,OUTSIDE://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
-      KAFKA_LISTENERS: INSIDE://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
-      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: "topic_test:1:1"
-    volumes:
-     - /var/run/docker.sock:/var/run/docker.sock
-
   product_service:
     build: 
       context: ./Product
@@ -37,20 +13,15 @@ services:
       - ./Product/app:/app
     environment:
       - DB_HOST=${DB_HOST}
-      - DB_NAME=${DB_NAME}
+      - DB_NAME=${PRODUCT_DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
+      - DB_PORT=${DB_PORT}
       - SECRET_KEY=${SECRET_KEY}
     depends_on:
       - db
       - zookeeper
       - kafka
-      # zookeeper:
-      #   condition: service_healthy
-      # kafka:
-      #   condition: service_healthy
-      # db:
-      #   condition: service_healthy
       
   order_service:
     build: 
@@ -64,34 +35,65 @@ services:
       - ./Order/app:/app
     environment:
       - DB_HOST=${DB_HOST}
-      - DB_NAME=${DB_NAME}
+      - DB_NAME=${ORDER_DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASS=${DB_PASS}
+      - DB_PORT=${DB_PORT}
       - SECRET_KEY=${SECRET_KEY}
     depends_on:
       - db
       - zookeeper
       - kafka
-      # zookeeper:
-      #   condition: service_healthy
-      # kafka:
-      #   condition: service_healthy
-      # db:
-      #   condition: service_healthy
       
   db:
     image: postgres
     restart: always
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql/data/
+      - ./sql/create_db.sql:/docker-entrypoint-initdb.d/create_tables.sql
     expose:
-      - 5432
+      - ${DB_PORT}
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASS}
-      - POSTGRES_DB=${DB_NAME}
-      
- 
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "3000:80"
+    volumes:
+      - ./nginx/nginx_config.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - product_service
+      - order_service
+
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:3.8
+    ports:
+      - "2181:2181"
+    volumes:
+      - "zookeeper_data:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+  kafka:
+    image: docker.io/bitnami/kafka:2.8
+    ports:
+      - "9092:9092"
+    volumes:
+      - "kafka_data:/bitnami"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9093,EXTERNAL://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9093,EXTERNAL://localhost:9092
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+    depends_on:
+      - zookeeper
 
 volumes:
   postgres-data:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local

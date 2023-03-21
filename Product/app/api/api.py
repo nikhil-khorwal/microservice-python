@@ -25,7 +25,6 @@ async def get_all_products(product_id:int, Session = Depends(get_db)):
 
 @products.post("/")
 async def create_product(data:product_model, Session = Depends(get_db)):
-    print(data)
     session = Session()
     new_product = ProductTable(
         title=data.title,

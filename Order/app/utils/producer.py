@@ -1,15 +1,9 @@
-from kafka import KafkaProducer
-import uuid
 import json
-from time import sleep
+from kafka import KafkaProducer
+
 
 producer = KafkaProducer(
-    bootstrap_servers=['localhost:9092'],
-    value_serializer=lambda v: json.dumps(v).encode('utf-8'))
-
-for _ in range(10):
-    data = {"id": str(uuid.uuid4())}
-    print(data)
-    producer.send('order_kafka',value=data )
-    producer.flush()
-    sleep(1)
+        bootstrap_servers=['localhost:9092'],
+        value_serializer=lambda v: json.dumps(v).encode('utf-8'))
+producer.send('product_kafka',value={"":""} )
+producer.flush()
