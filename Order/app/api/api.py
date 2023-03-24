@@ -1,8 +1,10 @@
 import asyncio
+import datetime
 import json
+import os
+import aiokafka
 from fastapi import APIRouter, BackgroundTasks,Depends,status
 from kafka import KafkaProducer
-from utils.kafka_file import consume_data
 from utils.kafka_file import produce_data
 from api.base import get_db
 from api.model import OrderTable,order_model
@@ -15,7 +17,7 @@ orders = APIRouter()
 
 @orders.get("/")
 async def get_all_orders(background_task:BackgroundTasks,Session = Depends(get_db)):
-    produce_data()
+    background_task.add_task(produce_data())
     session = Session()
     res = session.query(OrderTable).all()
     return res
@@ -23,8 +25,7 @@ async def get_all_orders(background_task:BackgroundTasks,Session = Depends(get_d
 @orders.post("/")
 async def create_order(data:order_model, Session = Depends(get_db)):
     session = Session()
-    
-    product = requests.get("http://host.docker.internal:8000/products/{}".format(data.product_id))
+    product = requests.get(f"{os.environ.get('PRODUCT_SERVICE_URL')}/products/{data.product_id}")
     if(product.status_code==404):
         return JSONResponse(status_code= status.HTTP_404_NOT_FOUND,content={"message":"product not found"})
     

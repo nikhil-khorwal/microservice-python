@@ -1,6 +1,7 @@
 import asyncio
 from cmath import log
 import datetime
+from kafka import KafkaConsumer
 import json
 from kafka import KafkaProducer
 import uuid
@@ -17,7 +18,7 @@ def produce_data():
             the_dt = str(datetime.datetime.utcnow())
             val = f"Count: {_} at {the_dt}"
             print(val)
-            producer.send(topic="order_topic", value=val)
+            producer.send(topic="product_topic", value=val)
     except Exception as e:
         print("err",e)
     else:
