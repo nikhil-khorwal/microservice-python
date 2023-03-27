@@ -13,7 +13,7 @@ from sqlalchemy import (
     Float,
 )
 
-from datetime import datetime
+from datetime import date, datetime
 from pydantic import BaseModel
 
 class OrderEnum(enum.Enum):
@@ -30,13 +30,20 @@ class OrderTable(Base):
     phone = Column(String(13))
     created_at = Column(String(100), default=datetime.now())
     updated_at = Column(String(100), default=datetime.now())
-    status = Column(String(13))
+    quantity = Column(Integer)
+    status = Column(String(13),default="pending")
     product_id = Column(Integer)
     is_delete = Column(Boolean, default=False)
+
+    
 
 
 class order_model(BaseModel):
     email :str
     phone:str
-    status:str
+    quantity:int
     product_id:int
+
+    class Config:
+            orm_mode = True
+

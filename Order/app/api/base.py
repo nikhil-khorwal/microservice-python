@@ -1,4 +1,3 @@
-from cmath import log
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
 from dotenv import load_dotenv
@@ -9,7 +8,7 @@ from sqlalchemy.ext.declarative import declarative_base
 Base = declarative_base()
 
 def get_db():
-    connection_string = os.environ.get("PRODUCT_DB_URI")
+    connection_string = os.environ.get("ORDER_DB_URI")
     engine = create_engine(connection_string)
 
     def recreate_database():
