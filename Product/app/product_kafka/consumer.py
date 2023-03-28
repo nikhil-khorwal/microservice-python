@@ -22,6 +22,7 @@ class Consumer:
         finally:
             print("stop")
             await consumer.stop()
+            print(consumer._closed)
 
     async def check_events(event):
         print(event)

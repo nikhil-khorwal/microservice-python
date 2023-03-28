@@ -6,12 +6,13 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 import psycopg2
+from sqlalchemy import null
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 from product_kafka.consumer import Consumer
 from api.api import products
-from psycopg2.extras import LogicalReplicationConnection
+from psycopg2.extras import LogicalReplicationConnection,ReplicationCursor,ReplicationMessage
 
 load_dotenv()
 
@@ -41,21 +42,49 @@ def check():
     return {"root":"Product service is working"}
     
 def consume(msg):
+    print("start replication")
     print("psycopg2",msg.payload)
+
+
+class BackgroundRunner:
+    def __init__(self):
+        connection = {
+            'host': 'db',
+            'port': 5432,
+            'database': 'product',
+            'user': 'postgres',
+            'password': 'postgres',
+        }
+        my_connection  = psycopg2.connect(**connection,
+                    connection_factory = LogicalReplicationConnection)
+        self.cur = my_connection.cursor()
+        # self.cur.execute("CREATE PUBLICATION product_pub FOR ALL TABLES;")
+        self.cur.drop_replication_slot('test_slot')
+        self.cur.create_replication_slot('test_slot', output_plugin = 'pgoutput')
+        self.cur.start_replication(slot_name = 'test_slot',  decode= True, options={"proto_version": 1,"publication_names": "product_pub"})
+
+    async def run_main(self):
+        while True:
+
+            await asyncio.sleep(1)
+            message = self.cur.read_message()
+            print(message)
+            if message is not None:
+                print(message.payload.decode('utf-8'))
+            if message is not None:
+                data = message.payload.decode('utf-8')
+                print(type(data))
+            # if message is not None:
+            #     print("message",message)
+
+
+
 
 @app.on_event("startup")
 async def app_startup():
-    try:
-        my_connection  = psycopg2.connect(
-                    "dbname='product' host='db' user='postgres' password='postgres'" ,
-                    connection_factory = LogicalReplicationConnection)
-        cur = my_connection.cursor()
-        cur.create_replication_slot('test_slot', output_plugin = 'wal2json')
-        cur.start_replication(slot_name = 'test_slot', options = {'pretty-print' : 1}, decode= True)
-        cur.consume_stream(consume)
-        loop.run_until_complete(Consumer.consume_data(loop))
-    except Exception as e:
-        print(e)
+    runner = BackgroundRunner()
+    asyncio.create_task(runner.run_main())
+      
 
 app.include_router(products,prefix="/products")
 

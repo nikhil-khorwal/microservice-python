@@ -61,6 +61,7 @@ services:
       - postgres-data:/var/lib/postgresql/data/
       - ./sql/create_db.sql:/docker-entrypoint-initdb.d/create_tables.sql
       - ./sql/postgres.conf:/etc/postgresql.conf
+      - ./sql/my-pg_hba.conf:/etc/postgresql/pg_hba.conf
     expose:
       - ${POSTGRES_PORT}
     env_file: 
