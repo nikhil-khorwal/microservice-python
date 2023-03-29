@@ -1,4 +1,6 @@
 import asyncio
+from base64 import encode
+import json
 from re import T
 from aiokafka import AIOKafkaConsumer
 from fastapi import FastAPI,status
@@ -13,7 +15,7 @@ from dotenv import load_dotenv
 from product_kafka.consumer import Consumer
 from api.api import products
 from psycopg2.extras import LogicalReplicationConnection,ReplicationCursor,ReplicationMessage
-
+import codecs
 load_dotenv()
 
 app = FastAPI()
@@ -57,23 +59,27 @@ class BackgroundRunner:
         }
         my_connection  = psycopg2.connect(**connection,
                     connection_factory = LogicalReplicationConnection)
-        self.cur = my_connection.cursor()
+        self.cur:ReplicationCursor = my_connection.cursor()
         # self.cur.execute("CREATE PUBLICATION product_pub FOR ALL TABLES;")
         self.cur.drop_replication_slot('test_slot')
         self.cur.create_replication_slot('test_slot', output_plugin = 'pgoutput')
-        self.cur.start_replication(slot_name = 'test_slot',  decode= True, options={"proto_version": 1,"publication_names": "product_pub"})
-
+        self.cur.start_replication(slot_name = 'test_slot',   options={"proto_version": 1,"publication_names": "product_pub"})
+        # self.cur.execute("SELECT * FROM pg_logical_slot_get_changes('test_slot', NULL, NULL)")
     async def run_main(self):
+        # for change in self.cur:
+        #     print(change)
         while True:
-
             await asyncio.sleep(1)
             message = self.cur.read_message()
-            print(message)
+            
+            
             if message is not None:
-                print(message.payload.decode('utf-8'))
-            if message is not None:
-                data = message.payload.decode('utf-8')
-                print(type(data))
+                print(codecs.decode(message.payload))
+                
+                # print(message.payload.decode('utf-8'))
+            # if message is not None:
+            #     data = message.payload.decode('utf-8')
+            #     print(type(data))
             # if message is not None:
             #     print("message",message)
 

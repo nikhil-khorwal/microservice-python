@@ -37,6 +37,8 @@ services:
     restart: always
     ports:
       - "2181:2181"
+    logging:
+      driver: none
     volumes:
       - "zookeeper_data:/bitnami"
     environment:
@@ -47,6 +49,8 @@ services:
     restart: always
     ports:
       - "9092:9092"
+    logging:
+      driver: none
     volumes:
       - "kafka_data:/bitnami"
     env_file: 
@@ -61,17 +65,19 @@ services:
       - postgres-data:/var/lib/postgresql/data/
       - ./sql/create_db.sql:/docker-entrypoint-initdb.d/create_tables.sql
       - ./sql/postgres.conf:/etc/postgresql.conf
-      - ./sql/my-pg_hba.conf:/etc/postgresql/pg_hba.conf
     expose:
       - ${POSTGRES_PORT}
     env_file: 
       - ./.env
+      
 
   nginx:
     image: nginx:latest
     restart: always
     ports:
       - ${PORT}:80
+    logging:
+      driver: none
     env_file: 
       - ./.env
     volumes:
@@ -80,18 +86,35 @@ services:
       - product_service
       - order_service
 
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    ports:
+      - "5050:80"
+    logging:
+      driver: none
+    environment:
+      PGADMIN_DEFAULT_EMAIL: nikkhorwal@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: Radixweb8
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+
   kafka-ui:
     image: provectuslabs/kafka-ui
     container_name: kafka-ui
     ports:
       - "8080:8080"
     restart: always
+    logging:
+      driver: none
     environment:
       - KAFKA_CLUSTERS_0_NAME=local
       - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9093
 
+
 volumes:
   postgres-data:
+  pgadmin-data:
   zookeeper_data:
     driver: local
   kafka_data:

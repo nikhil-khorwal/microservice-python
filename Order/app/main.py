@@ -1,6 +1,8 @@
 import asyncio
 import json
+import os
 from fastapi import  FastAPI,status
+from sqlalchemy import create_engine
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -9,6 +11,8 @@ from fastapi.responses import JSONResponse
 from fastapi.encoders import jsonable_encoder
 from order_kafka.consumer import Consumer
 from api.api import  orders
+
+from api.base import Base
 
 app = FastAPI()
 loop = asyncio.get_event_loop()
@@ -38,6 +42,10 @@ app.include_router(orders,prefix="/orders")
 @app.on_event("startup")
 async def app_startup():
     try:
+        connection_string = os.environ.get("CENTERLIZED_DB_URI")
+        engine = create_engine(connection_string)
+        Base.metadata.create_all(engine)
+
         loop.run_until_complete(Consumer.consume_data(loop))
     except Exception as e:
         print(e)
