@@ -20,8 +20,7 @@ async def get_all_orders(background_task:BackgroundTasks,Session = Depends(get_d
     return res
     
 @orders.post("/")
-async def create_order(data:order_model, Session = Depends(get_db)):
-    session = Session()
+async def create_order(data:order_model, session = Depends(get_db)):
     response = requests.get(f"{os.environ.get('PRODUCT_SERVICE_URL')}/products/{data.product_id}")
     if(response.status_code==404):
         return JSONResponse(status_code= status.HTTP_404_NOT_FOUND,content={"message":"product not found"})

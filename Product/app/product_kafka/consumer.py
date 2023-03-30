@@ -25,6 +25,7 @@ class Consumer:
             print(consumer._closed)
 
     async def check_events(event):
+        events = Events()
         print(event)
         if event.key == 'create_order':
-            await Events.create_order(event)
+            await events.create_order(event)

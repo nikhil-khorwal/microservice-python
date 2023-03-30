@@ -2,16 +2,15 @@
 from api.base import get_db
 from api.model import ProductTable
 class Events:
+  def __init__(self):
+    Session = get_db()  
+    self.session = Session()
 
-  @staticmethod
-  async def create_order(event):
+  async def create_order(self,event):
     try:
-      print(event.value)
-      Session = get_db()
-      session = Session()
-      product = session.query(ProductTable).filter(ProductTable.id==event.value.get("product_id")).one()
+      product = self.session.query(ProductTable).filter(ProductTable.id==event.value.get("product_id")).one()
       product.stock = product.stock-event.value.get("quantity")
-      session.commit()
+      self.session.commit()
       print("order created")
     except Exception as e:
       print("Error : ",e)

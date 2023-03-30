@@ -16,4 +16,15 @@ def get_db():
 
     recreate_database()
     Session = sessionmaker(bind=engine)
-    return Session
+    return Session()
+
+def get_centerlized_db():
+    connection_string = os.environ.get("CENTERLIZED_DB_URI")
+    engine = create_engine(connection_string)
+
+    def recreate_database():
+        Base.metadata.create_all(engine)
+
+    recreate_database()
+    Session = sessionmaker(bind=engine)
+    return Session()
