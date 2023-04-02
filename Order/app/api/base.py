@@ -1,5 +1,5 @@
 from sqlalchemy.orm import sessionmaker
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine,text
 from dotenv import load_dotenv
 load_dotenv()
 import os
@@ -18,13 +18,9 @@ def get_db():
     Session = sessionmaker(bind=engine)
     return Session()
 
-def get_centerlized_db():
+def get_centerlized(query):
     connection_string = os.environ.get("CENTERLIZED_DB_URI")
     engine = create_engine(connection_string)
-
-    def recreate_database():
-        Base.metadata.create_all(engine)
-
-    recreate_database()
-    Session = sessionmaker(bind=engine)
-    return Session()
+    conn = engine.connect()
+    result = conn.execute(text(query))
+    return [i for i in result]

@@ -24,19 +24,3 @@ class Consumer:
 
     async def check_events(event):
         print(event)
-
-
-# def cdc_reader():
-#     cdc_reader = pypgoutput.LogicalReplicationReader(
-#                 publication_name="test_pub",
-#                 slot_name="test_slot",
-#                 host="db",
-#                 database="product",
-#                 port=5432,
-#                 user="postgres",
-#                 password="postgres",)
-#     for message in cdc_reader:
-#         print(message.json(indent=2))
-
-
-#   cdc_reader()

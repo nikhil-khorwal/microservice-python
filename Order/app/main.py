@@ -40,10 +40,8 @@ app.include_router(orders,prefix="/orders")
 @app.on_event("startup")
 async def app_startup():
     try:
-        engine = create_engine(os.environ.get("CENTERLIZED_DB_URI"))
-        Base.metadata.create_all(engine)
-        engine = create_engine(os.environ.get("ORDER_DB_URI"))
-        Base.metadata.create_all(engine)
+        Base.metadata.create_all(create_engine(os.environ.get("CENTERLIZED_DB_URI")))
+        Base.metadata.create_all(create_engine(os.environ.get("ORDER_DB_URI")))
         loop.run_until_complete(Consumer.consume_data(loop))
     except Exception as e:
         print(e)
